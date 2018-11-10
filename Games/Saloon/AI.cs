@@ -43,7 +43,7 @@ namespace Joueur.cs.Games.Saloon
         public override string GetName()
         {
             // <<-- Creer-Merge: get-name -->> - Code you add between this comment and the end comment will be preserved between Creer re-runs.
-            return "Saloon C# Player"; // REPLACE THIS WITH YOUR TEAM NAME!
+            return "Not A Dank Meme";
             // <<-- /Creer-Merge: get-name -->>
         }
 
@@ -56,7 +56,9 @@ namespace Joueur.cs.Games.Saloon
         public override void Start()
         {
             // <<-- Creer-Merge: start -->> - Code you add between this comment and the end comment will be preserved between Creer re-runs.
-            base.Start();
+            Console.WriteLine("Game started");
+            Console.WriteLine("Max cowboys per job: " + this.Game.MaxCowboysPerJob);
+            Console.WriteLine("Map size: " + this.Game.MapWidth + ", " + this.Game.MapHeight);
             // <<-- /Creer-Merge: start -->>
         }
 
@@ -97,6 +99,86 @@ namespace Joueur.cs.Games.Saloon
         {
             // <<-- Creer-Merge: runTurn -->> - Code you add between this comment and the end comment will be preserved between Creer re-runs.
             // Put your game logic here for runTurn
+            Player player = this.Player;
+            HashSet<int> playedPianos = new HashSet<int>();
+
+            // Do cowboy logic
+            foreach (Cowboy cowboy in this.Player.Cowboys) {
+                string job = cowboy.Job;
+                if (cowboy.IsDrunk) {
+                    Console.WriteLine(job + ": I swear to drunk I'm not god!");
+                    continue;
+                }
+
+                switch (job) {
+                    case "Brawler": // Attack nearest bartender
+                        if (!this.MoveToPiano(cowboy, playedPianos))
+                            this.MoveToEnemies(cowboy);
+                        break;
+                    case "Sharpshooter":
+                        if (!this.MoveToPiano(cowboy, playedPianos))
+                            this.RunFromHazards(cowboy);
+                        break;
+                    case "Bartender":
+                        if (this.MoveToPiano(cowboy, playedPianos))
+                            break;
+
+                        if (cowboy.TurnsBusy > 0) {
+                            if (!this.MoveToPiano(cowboy, playedPianos))
+                                this.RunFromHazards(cowboy);
+                        } else {
+                            string actDir;
+
+                            bool r = this.MoveToLineOfSight(cowboy, tile => {
+                                // Only sucessful if enemy cowboy found > 1 tile away
+                                if (tile.Cowboy != null) {
+                                    if (tile.Cowboy.Owner == player /*|| Math.abs(cowboy.tile.x - tile.x) + Math.abs(cowboy.tile.y - tile.y) <= 1*/)
+                                        return -1;
+                                    if (tile.TileNorth?.Furnishing?.IsPiano == true)
+                                        return 1;
+                                    if (tile.TileEast?.Furnishing?.IsPiano == true)
+                                        return 1;
+                                    if (tile.TileSouth?.Furnishing?.IsPiano == true)
+                                        return 1;
+                                    if (tile.TileWest?.Furnishing?.IsPiano == true)
+                                        return 1;
+                                } else if (tile.Furnishing != null || tile.IsBalcony)
+                                    return -1;
+                                return 0;
+                            }, out actDir);
+
+                            if (actDir != null) {
+                                Console.WriteLine($"{cowboy.Job}: Acting in this direction: {actDir}");
+                                Tile actTile = null;
+                                switch (actDir) {
+                                    case "North":
+                                        actTile = cowboy.Tile.TileNorth;
+                                        break;
+                                    case "East":
+                                        actTile = cowboy.Tile.TileEast;
+                                        break;
+                                    case "South":
+                                        actTile = cowboy.Tile.TileSouth;
+                                        break;
+                                    case "West":
+                                        actTile = cowboy.Tile.TileWest;
+                                        break;
+                                }
+
+                                if (actTile != null)
+                                    cowboy.Act(actTile, actDir == "North" ? "South" : actDir == "South" ? "North" : actDir == "East" ? "West" : actDir == "West" ? "East" : "North");
+                                else
+                                    Console.WriteLine($"{cowboy.Job}: Coudln't figure out direction to Act!");
+                            } else if (!r)
+                                this.RunFromHazards(cowboy);
+                        }
+                        break;
+                }
+            }
+
+            // Add cowboy if possible
+            this.SpawnIfAble();
+
             return true;
             // <<-- /Creer-Merge: runTurn -->>
         }
@@ -169,7 +251,321 @@ namespace Joueur.cs.Games.Saloon
         }
 
         // <<-- Creer-Merge: methods -->> - Code you add between this comment and the end comment will be preserved between Creer re-runs.
-        // you can add additional methods here for your AI to call
+        private void SpawnIfAble() {
+            if (!this.Player.YoungGun.CanCallIn)
+                return;
+
+            // Check if spawning cowboy on friendly unit
+            if (this.Player.YoungGun.CallInTile == null || this.Player.YoungGun.CallInTile.Furnishing != null)
+                return;
+
+            foreach (string job in this.Game.Jobs) {
+                if (this.Player.Cowboys.Count(cowboy => cowboy.Job == job) >= this.Game.MaxCowboysPerJob)
+                    continue;
+
+                Console.WriteLine($"Calling in {job}");
+                this.Player.YoungGun.CallIn(job);
+                break;
+            }
+        }
+
+        private bool MoveToPiano(Cowboy cowboy, HashSet<int> playedPianos) {
+            Console.WriteLine($"{cowboy.Job}: Looking for piano starting at {cowboy.Tile.X}, {cowboy.Tile.Y}");
+            Node path = this.PathToNearest(cowboy.Tile, t => t.Furnishing != null && t.Furnishing.IsPiano && !playedPianos.Contains(this.CoordsToIndex(t.X, t.Y)), null, true);
+
+            if (path == null) {
+                Console.WriteLine($"{cowboy.Job}: Path not found");
+            } else {
+                Console.WriteLine($"{cowboy.Job}: Found path! Target at {path.Tile.X}, {path.Tile.Y}");
+
+                Node moveNode = path;
+                while (moveNode.Parent?.Parent != null)
+                    moveNode = moveNode.Parent;
+
+                if (moveNode != path) {
+                    if (cowboy.Move(moveNode.Tile))
+                        return true;
+                    Console.WriteLine($"{cowboy.Job}: Couldn't Move. Pathfinding is broken");
+                } else {
+                    Console.WriteLine($"{cowboy.Job}: Playing piano");
+                    cowboy.Play(moveNode.Tile.Furnishing);
+                    playedPianos.Add(this.CoordsToIndex(moveNode.Tile.X, moveNode.Tile.Y));
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void MoveToEnemies(Cowboy cowboy) {
+            Console.WriteLine($"{cowboy.Job}: Looking for enemies starting at {cowboy.Tile.X}, {cowboy.Tile.Y}");
+            Node path = this.PathToNearest(cowboy.Tile, t => t.Cowboy?.Owner == this.Player.Opponent, t => {
+                int cost = this.GetMovementCost(t);
+                // Try to go to another side of enemy if tile would damage friendly unit
+                //if (t.tileNorth && t.tileNorth.cowboy && t.tileNorth.cowboy.owner == this.player) cost += 7;
+                //if (t.tileEast && t.tileEast.cowboy && t.tileEast.cowboy.owner == this.player) cost += 7;
+                //if (t.tileSouth && t.tileSouth.cowboy && t.tileSouth.cowboy.owner == this.player) cost += 7;
+                //if (t.tileWest && t.tileWest.cowboy && t.tileWest.cowboy.owner == this.player) cost += 7;
+                return cost;
+            }, true);
+
+            if (path != null) {
+                Console.WriteLine($"{cowboy.Job}: Found path! Target at ({path.Tile.X}, {path.Tile.Y}).");
+
+                Node moveNode = path;
+                while (moveNode.Parent?.Parent != null)
+                    moveNode = moveNode.Parent;
+
+                if (moveNode != path) {
+                    if (cowboy.Move(moveNode.Tile))
+                        return;
+                    Console.WriteLine($"{cowboy.Job}: Couldn't Move. Pathfinding is broken.");
+                } else {
+                    Console.WriteLine($"{cowboy.Job}: Already here!");
+                }
+            } else
+                Console.WriteLine($"{cowboy.Job}: Path not found.");
+        }
+
+        // validSpot(tile) => -# for break, 0 for continue, +# for match
+        private bool MoveToLineOfSight(Cowboy cowboy, Func<Tile, int> validSpot, out string actDir) {
+            Console.WriteLine($"{cowboy.Job}: Looking for line of sight spot to enemies starting at {cowboy.Tile.X}, {cowboy.Tile.Y}");
+            string dir = null;
+            Node path = this.PathToNearest(cowboy.Tile, tile => {
+                // Check if valid spot
+                int cost = this.GetMovementCost(tile);
+                if (cost < 0 && tile.Cowboy != cowboy)
+                    return false;
+                // Check if enemy piano-playing cowboy in line of sight
+                Tile t;
+
+                // Check +x line of sight
+                dir = "East";
+                int x = tile.X;
+                int y = tile.Y;
+                while ((t = this.GetTile(++x, y)) != null) {
+                    int r = validSpot(t);
+                    if (r < 0)
+                        break;
+                    if (r > 0)
+                        return true;
+                }
+                // Check -x line of sight
+                dir = "West";
+                x = tile.X;
+                y = tile.Y;
+                while ((t = this.GetTile(--x, y)) != null) {
+                    int r = validSpot(t);
+                    if (r < 0)
+                        break;
+                    if (r > 0)
+                        return true;
+                }
+
+                // Check +y line of sight
+                dir = "South";
+                x = tile.X;
+                y = tile.Y;
+                while ((t = this.GetTile(x, ++y)) != null) {
+                    int r = validSpot(t);
+                    if (r < 0)
+                        break;
+                    if (r > 0)
+                        return true;
+                }
+
+                // Check -y line of sight
+                dir = "North";
+                x = tile.X;
+                y = tile.Y;
+                while ((t = this.GetTile(x, --y)) != null) {
+                    int r = validSpot(t);
+                    if (r < 0)
+                        break;
+                    if (r > 0)
+                        return true;
+                }
+
+                dir = null;
+                return false;
+            });
+
+            actDir = dir;
+            if (path != null) {
+                Console.WriteLine($"{cowboy.Job}: Found path! Target at {path.Tile.X}, {path.Tile.Y}");
+                Node moveNode = path;
+                while (moveNode.Parent?.Parent != null)
+                    moveNode = moveNode.Parent;
+
+                if (moveNode.Tile != cowboy.Tile) {
+                    if (cowboy.Move(moveNode.Tile))
+                        return true;
+                    Console.WriteLine($"{cowboy.Job}: Couldn't move. Pathfinding is broken.");
+                } else
+                    return true;
+            } else
+                Console.WriteLine($"{cowboy.Job}: No decent spots found.");
+            return false;
+        }
+
+        private void RunFromHazards(Cowboy cowboy) {
+            if (this.GetMovementCost(cowboy.Tile) != 1)
+                return;
+
+            Console.WriteLine($"{cowboy.Job}: Running from hazards starting at {cowboy.Tile.X}, {cowboy.Tile.Y}");
+            Node path = this.PathToNearest(cowboy.Tile, tile => this.GetMovementCost(tile) == 1, null, true);
+
+            if (path != null) {
+                Console.WriteLine($"{cowboy.Job}: Found path! Target at {path.Tile.X}, {path.Tile.Y}");
+
+                Node moveNode = path;
+                while (moveNode.Parent?.Parent != null) {
+                    moveNode = moveNode.Parent;
+                }
+
+                if (moveNode != path) {
+                    if (cowboy.Move(moveNode.Tile))
+                        return;
+                    Console.WriteLine("{cowboy.job}: Couldn't move. Pathfinding is broken");
+                } else {
+                    Console.WriteLine("{cowboy.job}: Already safe!");
+                }
+            } else
+                Console.WriteLine("{cowboy.job}: Path not found");
+        }
+
+        private bool IsValidTile(int x, int y) => x >= 0 && y >= 0 && x < this.Game.MapWidth && y < this.Game.MapHeight;
+
+        private Tile GetTile(int x, int y) => !this.IsValidTile(x, y) ? null : this.Game.Tiles[this.CoordsToIndex(x, y)];
+
+        private int CoordsToIndex(int x, int y) => x + y * this.Game.MapWidth;
+
+        private Node PathToNearest(Tile startTile, Func<Tile, bool> success, Func<Tile, int> getMovementCost = null, bool ignoreCostIfSuccessful = false) {
+            if (getMovementCost == null)
+                getMovementCost = this.GetMovementCost;
+
+            List<Node> openNodes = new List<Node>();
+            HashSet<int> closedNodes = new HashSet<int>();
+            Dictionary<int, Node> nodesByLocation = new Dictionary<int, Node>();
+
+            //console.log("PF: Adding starting node at " + startTile.x + ", " + startTile.y);
+            Node start = this.CreateNode(startTile);
+            //if (success.call(this, startTile)) return start;
+            openNodes.Add(start);
+            nodesByLocation[this.CoordsToIndex(startTile.X, startTile.Y)] = start;
+
+            int timeout = 1024; // Stops after this many nodes are checked
+            while (openNodes.Any()) {
+                openNodes.Sort((a, b) => a.G - b.G);
+                Node node = openNodes.First();
+                openNodes.RemoveAt(0);
+                Tile nodeTile = node.Tile;
+                int x = nodeTile.X;
+                int y = nodeTile.Y;
+
+                if (success(nodeTile))
+                    return node;
+
+                //console.log("PF: Closing node at " + x + ", " + y + " (" + this.coordsToIndex(x, y) + ")");
+                closedNodes.Add(this.CoordsToIndex(x, y));
+
+                HashSet<Tile> neighbors = new HashSet<Tile> {
+                    this.GetTile(x - 1, y),
+                    this.GetTile(x + 1, y),
+                    this.GetTile(x, y - 1),
+                    this.GetTile(x, y + 1)
+                };
+
+                foreach (Tile neighbor in neighbors) {
+                    // Tile doesn't exist
+                    if (neighbor == null)
+                        continue;
+                    int neighborLocation = this.CoordsToIndex(neighbor.X, neighbor.Y);
+
+                    // Node has already been checked
+                    if (closedNodes.Contains(neighborLocation))
+                        continue;
+
+                    int cost = getMovementCost(neighbor);
+                    Node neighborNode = this.CreateNode(neighbor, node, cost);
+                    Node curNeighborNode;
+                    if (!nodesByLocation.TryGetValue(neighborLocation, out curNeighborNode)) {
+                        nodesByLocation[neighborLocation] = neighborNode;
+                    } else if (curNeighborNode.G > neighborNode.G) {
+                        curNeighborNode.Parent = neighborNode.Parent;
+                        curNeighborNode.G = neighborNode.G;
+                    }
+
+                    // Check if can pass through it, or if final destination
+                    if (cost < 0 && !(ignoreCostIfSuccessful && success(neighbor)))
+                        continue;
+
+                    // Add to open list
+                    if (curNeighborNode == null)
+                        openNodes.Add(neighborNode);
+                }
+
+                if (--timeout == 0) {
+                    //console.log("PF: Pathfinding took too long");
+                    return null;
+                }
+            }
+
+            return null;
+        }
+
+        private Node CreateNode(Tile tile, Node parent = null, int? cost = null) {
+            return new Node {
+                Parent = parent,
+                G = parent == null ? 0 : parent.G + (cost ?? 1),
+                Tile = tile
+            };
+        }
+
+        // Returns cost for movement on tile, or negative number for impassible
+        private int GetMovementCost(Tile tile) {
+            if (tile.Furnishing != null || tile.IsBalcony || tile.Cowboy != null)
+                return -1;
+
+            int g = 1;
+
+            // Avoid pathing through hazards
+            if (tile.HasHazard)
+                return -1; //g += 100;
+            if (tile.Bottle != null)
+                return -1; //g += 1000;
+
+            // Discourage walking into bottles
+            if (tile.TileNorth?.Bottle != null && tile.TileNorth.Bottle.Direction == "South")
+                return -1; //g += 1000;
+            if (tile.TileEast?.Bottle != null && tile.TileEast.Bottle.Direction == "West")
+                return -1; //g += 1000;
+            if (tile.TileSouth?.Bottle != null && tile.TileSouth.Bottle.Direction == "North")
+                return -1; //g += 1000;
+            if (tile.TileWest?.Bottle != null && tile.TileWest.Bottle.Direction == "East")
+                return -1; //g += 1000;
+
+            // Discourage walking next to brawlers
+            if (tile.TileNorth?.Cowboy != null && tile.TileNorth.Cowboy.Job == "Brawler")
+                g += 100;
+            if (tile.TileEast?.Cowboy != null && tile.TileEast.Cowboy.Job == "Brawler")
+                g += 100;
+            if (tile.TileSouth?.Cowboy != null && tile.TileSouth.Cowboy.Job == "Brawler")
+                g += 100;
+            if (tile.TileWest?.Cowboy != null && tile.TileWest.Cowboy.Job == "Brawler")
+                g += 100;
+
+            // Discourage walking into line of fire of sharpshooters
+
+            return g;
+        }
+
+        private class Node {
+            public Node Parent { get; set; }
+            public Tile Tile { get; set; }
+            public int G { get; set; }
+        }
+
         // <<-- /Creer-Merge: methods -->>
         #endregion
     }

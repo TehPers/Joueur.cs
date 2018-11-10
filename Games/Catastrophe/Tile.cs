@@ -134,7 +134,7 @@ namespace Joueur.cs.Games.Catastrophe
         public bool IsPathable()
         {
             // <<-- Creer-Merge: is_pathable_builtin -->> - Code you add between this comment and the end comment will be preserved between Creer re-runs.
-            return false; // DEVELOPER ADD LOGIC HERE
+            return this.Unit == null && this.IsPathableIgnoringUnits();
             // <<-- /Creer-Merge: is_pathable_builtin -->>
         }
 
@@ -154,7 +154,32 @@ namespace Joueur.cs.Games.Catastrophe
         }
 
         // <<-- Creer-Merge: methods -->> - Code you add between this comment and the end comment will be preserved between Creer re-runs.
-        // you can add additional method(s) here.
+        public bool InRange(string structure, Player owner)
+        {
+            return owner.Structures.Any(s => s.Tile != null && s.Type == structure && Math.Abs(this.X - s.Tile.X) <= s.EffectRadius && Math.Abs(this.Y - s.Tile.Y) <= s.EffectRadius);
+        }
+
+        public bool InRange(Unit unit, int radius)
+        {
+            return Math.Abs(this.X - unit.Tile.X) <= radius && Math.Abs(this.Y - unit.Tile.Y) <= radius;
+        }
+
+        public bool IsPathableIgnoringUnits()
+        {
+            return this.Structure == null || this.Structure.Type == "shelter" || this.Structure.Type == "road";
+        }
+
+        public int Manhattan(Tile other)
+        {
+            return Math.Abs(this.X - other.X) + Math.Abs(this.Y - other.Y);
+        }
+
+        public float Euclidean(Tile other)
+        {
+            int dx = this.X - other.X;
+            int dy = this.Y - other.Y;
+            return (float) Math.Sqrt(dx * dx + dy * dy);
+        }
         // <<-- /Creer-Merge: methods -->>
         #endregion
     }

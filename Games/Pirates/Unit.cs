@@ -77,7 +77,10 @@ namespace Joueur.cs.Games.Pirates
 
 
         // <<-- Creer-Merge: properties -->> - Code you add between this comment and the end comment will be preserved between Creer re-runs.
-        // you can add additional properties(s) here. None of them will be tracked or updated by the server.
+        
+        public bool Healing { get; set; }
+        public Roles Role { get; set; } = Roles.NONE;
+
         // <<-- /Creer-Merge: properties -->>
         #endregion
 
@@ -194,7 +197,7 @@ namespace Joueur.cs.Games.Pirates
 
 
         // <<-- Creer-Merge: methods -->> - Code you add between this comment and the end comment will be preserved between Creer re-runs.
-        // you can add additional method(s) here.
+        
         // <<-- /Creer-Merge: methods -->>
         #endregion
     }

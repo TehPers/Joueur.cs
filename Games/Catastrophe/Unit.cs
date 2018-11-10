@@ -227,7 +227,30 @@ namespace Joueur.cs.Games.Catastrophe
 
 
         // <<-- Creer-Merge: methods -->> - Code you add between this comment and the end comment will be preserved between Creer re-runs.
-        // you can add additional method(s) here.
+        /// <summary>Makes sure the unit rests to full energy</summary>
+        public bool Resting { get; set; } = false;
+
+        /// <summary>Amount of resources this unit can still get before reaching the carry limit</summary>
+        public int CarryLeft => this.Job.CarryLimit - this.Food - this.Materials;
+
+        public int Precedence {
+            get {
+                if (this.Job.Title == "cat overlord")
+                    return -1;
+                if (this.Job.Title == "gatherer")
+                    return 0;
+                if (this.Job.Title == "builder")
+                    return 1;
+                if (this.Job.Title == "missionary")
+                    return 2;
+                if (this.Job.Title == "fresh human")
+                    return 3;
+                if (this.Job.Title == "soldier")
+                    return 4;
+
+                return 100;
+            }
+        }
         // <<-- /Creer-Merge: methods -->>
         #endregion
     }

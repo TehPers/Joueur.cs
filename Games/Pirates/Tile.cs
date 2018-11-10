@@ -129,7 +129,7 @@ namespace Joueur.cs.Games.Pirates
         public bool IsPathable()
         {
             // <<-- Creer-Merge: is_pathable_builtin -->> - Code you add between this comment and the end comment will be preserved between Creer re-runs.
-            return false; // DEVELOPER ADD LOGIC HERE
+            return this.Unit != null && this.Port != null;
             // <<-- /Creer-Merge: is_pathable_builtin -->>
         }
 
@@ -149,7 +149,31 @@ namespace Joueur.cs.Games.Pirates
         }
 
         // <<-- Creer-Merge: methods -->> - Code you add between this comment and the end comment will be preserved between Creer re-runs.
-        // you can add additional method(s) here.
+
+        public bool InRange(Tile other, double radius) {
+            return Math.Pow(this.X - other.X, 2) + Math.Pow(this.Y - other.Y, 2) <= radius * radius;
+        }
+
+        public bool PathableBy(Unit unit) {
+            // Don't merge units
+            if (this.Unit != null)
+                return false;
+
+            // Don't path through unfriendly ports
+            if (this.Port != null && this.Port.Owner != unit.Owner)
+                return false;
+
+            // Don't path crew through water
+            if (unit.ShipHealth == 0 && this.Type == "water" && this.Port == null)
+                return false;
+
+            // Don't path ships through land
+            if (unit.ShipHealth > 0 && this.Type == "land" )
+                return false;
+
+            return true;
+        }
+
         // <<-- /Creer-Merge: methods -->>
         #endregion
     }

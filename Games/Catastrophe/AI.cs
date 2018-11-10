@@ -5,7 +5,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 // <<-- Creer-Merge: usings -->> - Code you add between this comment and the end comment will be preserved between Creer re-runs.
-// you can add additional using(s) here
+using System.Diagnostics;
+using Joueur.cs.Games.Catastrophe.Helpers;
+
 // <<-- /Creer-Merge: usings -->>
 
 namespace Joueur.cs.Games.Catastrophe
@@ -30,7 +32,13 @@ namespace Joueur.cs.Games.Catastrophe
         #pragma warning restore 0649
 
         // <<-- Creer-Merge: properties -->> - Code you add between this comment and the end comment will be preserved between Creer re-runs.
-        // you can add additional properties here for your AI to use
+        public Player Opponent => this.Player.Opponent;
+
+        public Dictionary<string, UnitLogic> UnitLogics { get; } = new Dictionary<string, UnitLogic>();
+
+        public int UnitsPerGatherer => 4;
+
+        public Queue<Unit> UnitsToAct { get; } = new Queue<Unit>();
         // <<-- /Creer-Merge: properties -->>
         #endregion
 
@@ -43,7 +51,7 @@ namespace Joueur.cs.Games.Catastrophe
         public override string GetName()
         {
             // <<-- Creer-Merge: get-name -->> - Code you add between this comment and the end comment will be preserved between Creer re-runs.
-            return "Catastrophe C# Player"; // REPLACE THIS WITH YOUR TEAM NAME!
+            return "Not A Dank Meme";
             // <<-- /Creer-Merge: get-name -->>
         }
 
@@ -57,6 +65,57 @@ namespace Joueur.cs.Games.Catastrophe
         {
             // <<-- Creer-Merge: start -->> - Code you add between this comment and the end comment will be preserved between Creer re-runs.
             base.Start();
+
+            // Why am I embargoed?
+
+            // Setup unit logic
+            UnitLogic curLogic;
+
+            this.UnitLogics.Add("cat overlord", curLogic = new UnitLogic(this));
+            curLogic.AddTask(curLogic.CheckState);
+            curLogic.AddTask(curLogic.MoveToRoadShelter);
+            curLogic.AddTask(curLogic.Rest);
+
+            this.UnitLogics.Add("fresh human", curLogic = new UnitLogic(this));
+            curLogic.AddTask(curLogic.CheckState);
+            curLogic.AddTask(curLogic.ForceChangeJobs);
+            curLogic.AddTask(curLogic.Rest);
+            curLogic.AddTask(curLogic.ChangeJobs);
+
+            this.UnitLogics.Add("soldier", curLogic = new UnitLogic(this));
+            curLogic.AddTask(curLogic.CheckState);
+            curLogic.AddTask(curLogic.ForceChangeJobs);
+            curLogic.AddTask(curLogic.DefendCat);
+            curLogic.AddTask(curLogic.AttackEnemies);
+            curLogic.AddTask(curLogic.Rest);
+
+            this.UnitLogics.Add("missionary", curLogic = new UnitLogic(this));
+            curLogic.AddTask(curLogic.CheckState);
+            curLogic.AddTask(curLogic.Convert);
+            //curLogic.AddTask(curLogic.ConvertDefeated);
+            curLogic.AddTask(curLogic.ConvertRoad);
+            curLogic.AddTask(curLogic.Rest);
+
+            this.UnitLogics.Add("builder", curLogic = new UnitLogic(this));
+            curLogic.AddTask(curLogic.CheckState);
+            curLogic.AddTask(curLogic.ForceChangeJobs);
+            curLogic.AddTask(curLogic.PickupMaterials);
+            curLogic.AddTask(curLogic.Deconstruct);
+            curLogic.AddTask(curLogic.ConstructShelter);
+            //curLogic.AddTask(curLogic.ConstructMonument);
+            curLogic.AddTask(curLogic.ConstructWall);
+            curLogic.AddTask(curLogic.Rest);
+
+            this.UnitLogics.Add("gatherer", curLogic = new UnitLogic(this));
+            curLogic.AddTask(curLogic.CheckState);
+            curLogic.AddTask(curLogic.ForceChangeJobs);
+            curLogic.AddTask(curLogic.PickupFood);
+            curLogic.AddTask(curLogic.Harvest);
+            curLogic.AddTask(curLogic.StoreFood);
+            curLogic.AddTask(curLogic.Rest); // This will also store food
+
+            // Clear the console
+            Console.Clear();
             // <<-- /Creer-Merge: start -->>
         }
 
@@ -85,6 +144,9 @@ namespace Joueur.cs.Games.Catastrophe
         {
             // <<-- Creer-Merge: ended -->> - Code you add between this comment and the end comment will be preserved between Creer re-runs.
             base.Ended(won, reason);
+
+            if (Debugger.IsAttached)
+                Console.ReadLine();
             // <<-- /Creer-Merge: ended -->>
         }
 
@@ -96,7 +158,68 @@ namespace Joueur.cs.Games.Catastrophe
         public bool RunTurn()
         {
             // <<-- Creer-Merge: runTurn -->> - Code you add between this comment and the end comment will be preserved between Creer re-runs.
-            // Put your game logic here for runTurn
+            try {
+                // Show map and turn info
+                this.DisplayMap();
+                Stopwatch sw = new Stopwatch();
+                sw.Start();
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.BackgroundColor = ConsoleColor.Black;
+                Logger.Log($"--[ Turn {this.Game.CurrentTurn} / {this.Game.MaxTurns} ]--");
+                Logger.Log("Me:");
+                Logger.Log($"Food: {this.Player.Food} (-{this.Player.Upkeep} per day){(this.Player.Units.Any(u => u.Starving) ? " - STARVING" : "")}");
+                Logger.Log($"Units ({this.Player.Units.Count}): {string.Join(", ", this.Player.Units.GroupBy(u => u.Job.Title, u => u).Select(g => $"{g.Key} ({g.Count()})"))}");
+                Logger.Log($"Structures ({this.Player.Structures.Count}): {string.Join(", ", this.Player.Structures.GroupBy(s => s.Type, s => s).Select(g => $"{g.Key} ({g.Count()})"))}");
+                Logger.Log("Opponent:");
+                Logger.Log($"Food: {this.Opponent.Food} (-{this.Opponent.Upkeep} per day){(this.Opponent.Units.Any(u => u.Starving) ? " - STARVING" : "")}");
+                Logger.Log($"Units ({this.Opponent.Units.Count}): {string.Join(", ", this.Opponent.Units.GroupBy(u => u.Job.Title, u => u).Select(g => $"{g.Key} ({g.Count()})"))}");
+                Logger.Log($"Structures ({this.Opponent.Structures.Count}): {string.Join(", ", this.Opponent.Structures.GroupBy(s => s.Type, s => s).Select(g => $"{g.Key} ({g.Count()})"))}");
+                //Logger.Log($"Units On Road: {this.Game.Units.Count(u => u.Owner == null && u.MovementTarget != null)}");
+                //Logger.Log($"Squads: {string.Join("; ", this.Player.Units.Select(u => $"[{string.Join(", ", u.Squad.Select(u2 => $"({u2.Tile.X}, {u2.Tile.Y})"))}]"))}");
+
+                // Turn logic
+                this.UnitsToAct.Clear();
+                foreach (Unit unit in this.Player.Units.OrderBy(u => u.Precedence))
+                    this.UnitsToAct.Enqueue(unit);
+
+                Stopwatch funcStopwatch = new Stopwatch();
+                List<TimeSpan> times = new List<TimeSpan>();
+                while (this.UnitsToAct.Any()) {
+                    Unit unit = this.UnitsToAct.Dequeue();
+                    if (unit.Owner != this.Player)
+                        continue;
+
+                    // Display energy
+                    //unit.Log($"{unit.Energy}");
+
+                    // Get unit logic
+                    UnitLogic logic;
+                    if (!this.UnitLogics.TryGetValue(unit.Job.Title, out logic)) {
+                        Logger.Log($"No logic for {unit.Job.Title}!");
+                        continue;
+                    }
+
+                    // Perform tasks
+                    foreach (Func<Unit, bool> task in logic.Tasks) {
+                        funcStopwatch.Restart();
+                        bool result = task(unit);
+                        funcStopwatch.Stop();
+
+                        times.Add(funcStopwatch.Elapsed);
+
+                        if (result) {
+                            break;
+                        }
+                    }
+                }
+                sw.Stop();
+                Logger.Log($"Turn completed in {sw.ElapsedMilliseconds} ms");
+                Logger.Log($"Slowest task took {times.Max().TotalMilliseconds} ms");
+
+                //Thread.Sleep(250);
+            } catch (Exception) {
+                // Whoops
+            }
             return true;
             // <<-- /Creer-Merge: runTurn -->>
         }
@@ -169,7 +292,68 @@ namespace Joueur.cs.Games.Catastrophe
         }
 
         // <<-- Creer-Merge: methods -->> - Code you add between this comment and the end comment will be preserved between Creer re-runs.
-        // you can add additional methods here for your AI to call
+        private void DisplayMap() {
+            Console.SetCursorPosition(0, 0);
+            Console.BackgroundColor = ConsoleColor.White;
+            Console.Write(new string(' ', this.Game.MapWidth + 2));
+            Console.BackgroundColor = ConsoleColor.Black;
+            Console.WriteLine();
+            for (int y = 0; y < this.Game.MapHeight; y++) {
+                Console.BackgroundColor = ConsoleColor.White;
+                Console.Write(' ');
+                for (int x = 0; x < this.Game.MapWidth; x++) {
+                    Tile t = this.Game.Tiles[y * this.Game.MapWidth + x];
+
+                    // Background color
+                    Console.BackgroundColor = ConsoleColor.DarkYellow;
+
+                    // Character to display
+                    char foreground = ' ';
+                    Console.ForegroundColor = ConsoleColor.White;
+
+                    // Tile specific stuff
+                    if (t.Unit != null) {
+                        Console.ForegroundColor = t.Unit.Owner == this.Player ? ConsoleColor.Green : t.Unit.Owner == null ? ConsoleColor.White : ConsoleColor.Red;
+                        foreground = t.Unit?.Job?.Title.ToUpper().First() ?? '?';
+                    } else if (this.Game.Units.Any(u => u.Owner == null && u.MovementTarget == t)) {
+                        Console.ForegroundColor = ConsoleColor.Blue;
+                        foreground = '*';
+                    } else if (t.HarvestRate > 0) {
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        foreground = '$';
+                    } else if (t.Structure != null) {
+                        Console.ForegroundColor = t.Structure.Owner == this.Player ? ConsoleColor.Green : t.Structure.Owner == null ? ConsoleColor.White : ConsoleColor.Red;
+                        foreground = t.Structure.Type.ToLower().First();
+                    }
+
+                    if (t.Structure != null) {
+                        Console.BackgroundColor = ConsoleColor.DarkBlue;
+                    }
+
+                    Console.Write(foreground);
+                }
+                Console.BackgroundColor = ConsoleColor.White;
+                Console.Write(' ');
+                Console.BackgroundColor = ConsoleColor.Black;
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.Write(y);
+                Console.WriteLine();
+            }
+            Console.BackgroundColor = ConsoleColor.White;
+            Console.Write(new string(' ', this.Game.MapWidth + 2));
+            Console.BackgroundColor = ConsoleColor.Black;
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.WriteLine();
+
+            // Clear everything past here
+            int left = Console.CursorLeft;
+            int top = Console.CursorTop;
+            Console.Write(new string(' ', Math.Max(Console.WindowHeight, Console.WindowWidth * (Console.WindowHeight - top) - 1)));
+            Console.SetCursorPosition(left, top);
+        }
+
+        public int CountUnits(string job) => this.CountUnits(job, this.Player);
+        public int CountUnits(string job, Player player) => player.Units.Count(u => job == null || u.Job.Title == job);
         // <<-- /Creer-Merge: methods -->>
         #endregion
     }

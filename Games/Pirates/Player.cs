@@ -12,13 +12,11 @@ using System.Text;
 // you can add additional using(s) here
 // <<-- /Creer-Merge: usings -->>
 
-namespace Joueur.cs.Games.Pirates
-{
+namespace Joueur.cs.Games.Pirates {
     /// <summary>
     /// A player in this game. Every AI controls one player.
     /// </summary>
-    public class Player : Pirates.GameObject
-    {
+    public class Player : Pirates.GameObject {
         #region Properties
         /// <summary>
         /// What type of client this is, e.g. 'Python', 'JavaScript', or some other language. For potential data mining purposes.
@@ -91,15 +89,22 @@ namespace Joueur.cs.Games.Pirates
         /// <summary>
         /// Creates a new instance of Player. Used during game initialization, do not call directly.
         /// </summary>
-        protected Player() : base()
-        {
+        protected Player() : base() {
             this.Units = new List<Pirates.Unit>();
         }
 
 
 
         // <<-- Creer-Merge: methods -->> - Code you add between this comment and the end comment will be preserved between Creer re-runs.
-        // you can add additional method(s) here.
+
+        public int NetWorth(AI ai) {
+            return this.Gold + this.Units.Sum(u => {
+                if (u.Tile == null)
+                    return 0;
+                return u.Gold + u.Crew * ai.Game.CrewCost + (u.ShipHealth > 0 ? ai.Game.ShipCost : 0);
+            });
+        }
+
         // <<-- /Creer-Merge: methods -->>
         #endregion
     }
