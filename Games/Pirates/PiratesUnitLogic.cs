@@ -162,8 +162,8 @@ namespace Joueur.cs.Games.Pirates {
 
             // Get valid targets
             HashSet<Tile> targets = (from u in this.Game.Units
-                where u.Tile != null && u.TargetPort != null && u.Tile.Port == null
-                select u.Tile).ToHashSet();
+                                     where u.Tile != null && u.TargetPort != null && u.Tile.Port == null
+                                     select u.Tile).ToHashSet();
 
             if (!targets.Any())
                 return false;
@@ -274,8 +274,8 @@ namespace Joueur.cs.Games.Pirates {
 
             // Get valid targets
             HashSet<Tile> targets = (from u in this.Game.Units
-                where u.Tile != null && u.Owner == this.Player.Opponent && u.ShipHealth > 0
-                select u.Tile).ToHashSet();
+                                     where u.Tile != null && u.Owner == this.Player.Opponent && u.ShipHealth > 0
+                                     select u.Tile).ToHashSet();
 
             if (!targets.Any())
                 return false;
@@ -400,7 +400,7 @@ namespace Joueur.cs.Games.Pirates {
             if (unit.ShipHealth > 0)
                 return false;
 
-
+            return false;
         }
 
         public bool PissOff(Unit unit) {
