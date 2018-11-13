@@ -8,17 +8,17 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Joueur.cs.Conflux.Matching;
+
 // <<-- Creer-Merge: usings -->> - Code you add between this comment and the end comment will be preserved between Creer re-runs.
 // you can add additional using(s) here
 // <<-- /Creer-Merge: usings -->>
 
-namespace Joueur.cs.Games.Newtonian
-{
+namespace Joueur.cs.Games.Newtonian {
     /// <summary>
     /// Information about a unit's job.
     /// </summary>
-    public class Job : Newtonian.GameObject
-    {
+    public class Job : Newtonian.GameObject {
         #region Properties
         /// <summary>
         /// How many combined resources a unit with this Job can hold at once.
@@ -56,14 +56,19 @@ namespace Joueur.cs.Games.Newtonian
         /// <summary>
         /// Creates a new instance of Job. Used during game initialization, do not call directly.
         /// </summary>
-        protected Job() : base()
-        {
+        protected Job() : base() {
         }
 
 
 
         // <<-- Creer-Merge: methods -->> - Code you add between this comment and the end comment will be preserved between Creer re-runs.
-        // you can add additional method(s) here.
+        public string GetStunnableJob() {
+            return this.Title.Match<string, string>()
+                .When("intern", "physicist")
+                .When("physicist", "manager")
+                .When("manager", "intern")
+                .Else((string) null);
+        }
         // <<-- /Creer-Merge: methods -->>
         #endregion
     }

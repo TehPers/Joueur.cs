@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Joueur.cs.Games.Pirates.Helpers {
-    public class UnitLogic<TAI, TUnit> where TAI : BaseAI where TUnit : GameObject {
+namespace Joueur.cs.Helpers {
+    public class UnitLogic<TAI, TUnit> where TAI : BaseAI {
         public TAI AI { get; }
         public List<Func<TUnit, bool>> Tasks { get; }
 

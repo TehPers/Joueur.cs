@@ -6,8 +6,7 @@ using System.Linq;
 using System.Text;
 // <<-- Creer-Merge: usings -->> - Code you add between this comment and the end comment will be preserved between Creer re-runs.
 using System.Diagnostics;
-using Joueur.cs.Games.Pirates.Helpers;
-using static Joueur.cs.Games.Pirates.Helpers.Pathfinder;
+using Joueur.cs.Helpers;
 
 // <<-- /Creer-Merge: usings -->>
 

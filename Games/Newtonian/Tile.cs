@@ -12,13 +12,11 @@ using System.Text;
 // you can add additional using(s) here
 // <<-- /Creer-Merge: usings -->>
 
-namespace Joueur.cs.Games.Newtonian
-{
+namespace Joueur.cs.Games.Newtonian {
     /// <summary>
     /// A Tile in the game that makes up the 2D map grid.
     /// </summary>
-    public class Tile : Newtonian.GameObject
-    {
+    public class Tile : Newtonian.GameObject {
         #region Properties
         /// <summary>
         /// The amount of blueium on this tile.
@@ -116,8 +114,7 @@ namespace Joueur.cs.Games.Newtonian
         /// <summary>
         /// Creates a new instance of Tile. Used during game initialization, do not call directly.
         /// </summary>
-        protected Tile() : base()
-        {
+        protected Tile() : base() {
         }
 
 
@@ -125,27 +122,22 @@ namespace Joueur.cs.Games.Newtonian
         /// Gets the neighbors of this Tile
         /// </summary>
         /// <returns>The neighboring (adjacent) Tiles to this tile</returns>
-        public List<Tile> GetNeighbors()
-        {
+        public List<Tile> GetNeighbors() {
             var list = new List<Tile>();
 
-            if (this.TileNorth != null)
-            {
+            if (this.TileNorth != null) {
                 list.Add(this.TileNorth);
             }
 
-            if (this.TileEast != null)
-            {
+            if (this.TileEast != null) {
                 list.Add(this.TileEast);
             }
 
-            if (this.TileSouth != null)
-            {
+            if (this.TileSouth != null) {
                 list.Add(this.TileSouth);
             }
 
-            if (this.TileWest != null)
-            {
+            if (this.TileWest != null) {
                 list.Add(this.TileWest);
             }
 
@@ -156,10 +148,9 @@ namespace Joueur.cs.Games.Newtonian
         /// Checks if a Tile is pathable to units
         /// </summary>
         /// <returns>True if pathable, false otherwise</returns>
-        public bool IsPathable()
-        {
+        public bool IsPathable(Player player) {
             // <<-- Creer-Merge: is_pathable_builtin -->> - Code you add between this comment and the end comment will be preserved between Creer re-runs.
-            return false; // DEVELOPER ADD LOGIC HERE
+            return !this.IsWall && this.Unit == null && this.Machine == null && (this.Owner == null || this.Owner == player);
             // <<-- /Creer-Merge: is_pathable_builtin -->>
         }
 
@@ -168,10 +159,8 @@ namespace Joueur.cs.Games.Newtonian
         /// </summary>
         /// <param name="tile">Tile to check against</param>
         /// <returns>true if the tile is a neighbor of this Tile, false otherwise</returns>
-        public bool HasNeighbor(Tile tile)
-        {
-            if (tile == null)
-            {
+        public bool HasNeighbor(Tile tile) {
+            if (tile == null) {
                 return false;
             }
 
@@ -179,7 +168,9 @@ namespace Joueur.cs.Games.Newtonian
         }
 
         // <<-- Creer-Merge: methods -->> - Code you add between this comment and the end comment will be preserved between Creer re-runs.
-        // you can add additional method(s) here.
+        public bool InRange(Tile other, double radius) {
+            return Math.Pow(this.X - other.X, 2) + Math.Pow(this.Y - other.Y, 2) <= radius * radius;
+        }
         // <<-- /Creer-Merge: methods -->>
         #endregion
     }

@@ -14,12 +14,17 @@
     <OutputType>Exe</OutputType>
     <PackageId>Joueur.cs</PackageId>
     <RuntimeFrameworkVersion>2.0.0</RuntimeFrameworkVersion>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <GenerateSerializationAssemblies>Off</GenerateSerializationAssemblies>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Remove="_creer\**"/>
+    <Compile Remove="_creer\**" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="ILLink.Tasks" Version="0.1.4-preview-906439" />
     <PackageReference Include="Newtonsoft.Json" Version="9.0.1" />
+    <PackageReference Include="System.ValueTuple" Version="4.5.0" />
   </ItemGroup>
 </Project>

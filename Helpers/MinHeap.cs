@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Joueur.cs.Games.Catastrophe.Helpers
+namespace Joueur.cs.Helpers
 {
     public class MinHeap<T> : ICollection<T> where T : IComparable<T>
     {

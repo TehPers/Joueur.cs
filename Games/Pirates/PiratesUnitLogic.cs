@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Joueur.cs.Games.Pirates.Helpers;
-using static Joueur.cs.Games.Pirates.Helpers.Pathfinder;
+using Joueur.cs.Helpers;
+using static Joueur.cs.Helpers.Pathfinder;
 
 namespace Joueur.cs.Games.Pirates {
     public class PiratesUnitLogic : UnitLogic<AI, Unit> {

@@ -12,13 +12,11 @@ using System.Text;
 // you can add additional using(s) here
 // <<-- /Creer-Merge: usings -->>
 
-namespace Joueur.cs.Games.Newtonian
-{
+namespace Joueur.cs.Games.Newtonian {
     /// <summary>
     /// A unit in the game. May be a manager, intern, or physicist.
     /// </summary>
-    public class Unit : Newtonian.GameObject
-    {
+    public class Unit : Newtonian.GameObject {
         #region Properties
         /// <summary>
         /// Whether or not this Unit has performed its action this turn.
@@ -82,7 +80,9 @@ namespace Joueur.cs.Games.Newtonian
 
 
         // <<-- Creer-Merge: properties -->> - Code you add between this comment and the end comment will be preserved between Creer re-runs.
-        // you can add additional properties(s) here. None of them will be tracked or updated by the server.
+        public bool Healing { get; set; } = false;
+
+        // public Machine TargetMachine { get; set; }
         // <<-- /Creer-Merge: properties -->>
         #endregion
 
@@ -91,8 +91,7 @@ namespace Joueur.cs.Games.Newtonian
         /// <summary>
         /// Creates a new instance of Unit. Used during game initialization, do not call directly.
         /// </summary>
-        protected Unit() : base()
-        {
+        protected Unit() : base() {
         }
 
         /// <summary>
@@ -100,8 +99,7 @@ namespace Joueur.cs.Games.Newtonian
         /// </summary>
         /// <param name="tile">The tile the unit acts on.</param>
         /// <returns>True if successfully acted, false otherwise.</returns>
-        public bool Act(Newtonian.Tile tile)
-        {
+        public bool Act(Newtonian.Tile tile) {
             return this.RunOnServer<bool>("act", new Dictionary<string, object> {
                 {"tile", tile}
             });
@@ -112,8 +110,7 @@ namespace Joueur.cs.Games.Newtonian
         /// </summary>
         /// <param name="tile">The Tile to attack.</param>
         /// <returns>True if successfully attacked, false otherwise.</returns>
-        public bool Attack(Newtonian.Tile tile)
-        {
+        public bool Attack(Newtonian.Tile tile) {
             return this.RunOnServer<bool>("attack", new Dictionary<string, object> {
                 {"tile", tile}
             });
@@ -126,8 +123,7 @@ namespace Joueur.cs.Games.Newtonian
         /// <param name="amount">The number of materials to dropped. Amounts &lt;= 0 will drop all the materials.</param>
         /// <param name="material">The material the unit will drop. 'redium', 'blueium', 'redium ore', or 'blueium ore'.</param>
         /// <returns>True if successfully deposited, false otherwise.</returns>
-        public bool Drop(Newtonian.Tile tile, int amount, string material)
-        {
+        public bool Drop(Newtonian.Tile tile, int amount, string material) {
             return this.RunOnServer<bool>("drop", new Dictionary<string, object> {
                 {"tile", tile},
                 {"amount", amount},
@@ -140,8 +136,7 @@ namespace Joueur.cs.Games.Newtonian
         /// </summary>
         /// <param name="tile">The Tile this Unit should move to.</param>
         /// <returns>True if it moved, false otherwise.</returns>
-        public bool Move(Newtonian.Tile tile)
-        {
+        public bool Move(Newtonian.Tile tile) {
             return this.RunOnServer<bool>("move", new Dictionary<string, object> {
                 {"tile", tile}
             });
@@ -154,8 +149,7 @@ namespace Joueur.cs.Games.Newtonian
         /// <param name="amount">The amount of materials to pick up. Amounts &lt;= 0 will pick up all the materials that the unit can.</param>
         /// <param name="material">The material the unit will pick up. 'redium', 'blueium', 'redium ore', or 'blueium ore'.</param>
         /// <returns>True if successfully deposited, false otherwise.</returns>
-        public bool Pickup(Newtonian.Tile tile, int amount, string material)
-        {
+        public bool Pickup(Newtonian.Tile tile, int amount, string material) {
             return this.RunOnServer<bool>("pickup", new Dictionary<string, object> {
                 {"tile", tile},
                 {"amount", amount},
@@ -166,7 +160,9 @@ namespace Joueur.cs.Games.Newtonian
 
 
         // <<-- Creer-Merge: methods -->> - Code you add between this comment and the end comment will be preserved between Creer re-runs.
-        // you can add additional method(s) here.
+        public int CapacityRemaining() {
+            return this.Job.CarryLimit - this.Blueium - this.BlueiumOre - this.Redium - this.RediumOre;
+        }
         // <<-- /Creer-Merge: methods -->>
         #endregion
     }
